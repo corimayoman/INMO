@@ -15,7 +15,8 @@ export async function generateStaticParams() {
   return [];
 }
 
-export const dynamicParams = true;
+// Must be false for static export (output: 'export')
+export const dynamicParams = false;
 
 export const metadata: Metadata = {
   title: 'Property Details | WorldPropertyFinder',
