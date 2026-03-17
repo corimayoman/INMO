@@ -31,16 +31,16 @@ const footerLinks = {
 
 export function Footer() {
   return (
-    <footer className="bg-gray-900 text-gray-300 mt-20">
+    <footer className="bg-purple-950 text-purple-300 mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center gap-2 text-white font-bold text-lg mb-4">
-              <Globe className="w-5 h-5 text-brand-400" />
+              <Globe className="w-5 h-5 text-pink-400" />
               WorldPropertyFinder
             </Link>
-            <p className="text-sm text-gray-400 leading-relaxed">
+            <p className="text-sm text-purple-400 leading-relaxed">
               The global platform for finding your perfect property, anywhere in the world.
             </p>
           </div>
@@ -52,7 +52,7 @@ export function Footer() {
               <ul className="space-y-2">
                 {links.map((link) => (
                   <li key={link.href}>
-                    <Link href={link.href} className="text-sm text-gray-400 hover:text-white transition-colors">
+                    <Link href={link.href} className="text-sm text-purple-400 hover:text-pink-300 transition-colors">
                       {link.label}
                     </Link>
                   </li>
@@ -62,9 +62,9 @@ export function Footer() {
           ))}
         </div>
 
-        <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-gray-500">© {new Date().getFullYear()} WorldPropertyFinder. All rights reserved.</p>
-          <div className="flex items-center gap-4 text-sm text-gray-500">
+        <div className="border-t border-purple-800 mt-12 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <p className="text-sm text-purple-500">© {new Date().getFullYear()} WorldPropertyFinder. All rights reserved.</p>
+          <div className="flex items-center gap-4 text-sm text-purple-500">
             <span>🌍 Available worldwide</span>
             <span>•</span>
             <span>150+ countries</span>
