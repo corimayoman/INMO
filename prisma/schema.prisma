@@ -1,0 +1,626 @@
+// WorldPropertyFinder - Prisma Schema
+// PostgreSQL database schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  VISITOR
+  BUYER
+  AGENT
+  AGENCY_ADMIN
+  OWNER
+  MODERATOR
+  SUPER_ADMIN
+}
+
+enum AuthProvider {
+  EMAIL
+  GOOGLE
+  APPLE
+  MICROSOFT
+  FACEBOOK
+}
+
+enum ListingType {
+  SALE
+  RENT
+  SHORT_TERM
+  COMMERCIAL
+  LAND
+  NEW_DEVELOPMENT
+}
+
+enum PropertyType {
+  APARTMENT
+  HOUSE
+  VILLA
+  TOWNHOUSE
+  STUDIO
+  PENTHOUSE
+  DUPLEX
+  LOFT
+  OFFICE
+  RETAIL
+  WAREHOUSE
+  INDUSTRIAL
+  LAND
+  PARKING
+  OTHER
+}
+
+enum ListingStatus {
+  DRAFT
+  PENDING_REVIEW
+  ACTIVE
+  PAUSED
+  SOLD
+  RENTED
+  EXPIRED
+  REJECTED
+  ARCHIVED
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  FLOORPLAN
+  VIRTUAL_TOUR
+  DOCUMENT
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  VIEWING_SCHEDULED
+  OFFER_MADE
+  CLOSED_WON
+  CLOSED_LOST
+}
+
+enum NotificationType {
+  EMAIL
+  PUSH
+  SMS
+  IN_APP
+}
+
+enum SubscriptionPlan {
+  FREE
+  BASIC
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  PAST_DUE
+  TRIALING
+}
+
+enum ImportJobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  PARTIAL
+}
+
+enum EnergyRating {
+  A
+  B
+  C
+  D
+  E
+  F
+  G
+}
+
+// ─── User & Auth ──────────────────────────────────────────────────────────────
+
+model User {
+  id                String       @id @default(cuid())
+  email             String       @unique
+  emailVerified     Boolean      @default(false)
+  emailVerifiedAt   DateTime?
+  passwordHash      String?
+  role              UserRole     @default(BUYER)
+  firstName         String?
+  lastName          String?
+  phone             String?
+  avatarUrl         String?
+  preferredLanguage String       @default("en")
+  preferredCurrency String       @default("USD")
+  preferredUnits    String       @default("metric")
+  mfaEnabled        Boolean      @default(false)
+  mfaSecret         String?
+  gdprConsent       Boolean      @default(false)
+  gdprConsentAt     DateTime?
+  marketingConsent  Boolean      @default(false)
+  isActive          Boolean      @default(true)
+  isBanned          Boolean      @default(false)
+  bannedReason      String?
+  lastLoginAt       DateTime?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  oauthAccounts     OAuthAccount[]
+  sessions          Session[]
+  agent             Agent?
+  owner             Owner?
+  favorites         Favorite[]
+  savedSearches     SavedSearch[]
+  inquiries         Inquiry[]
+  viewings          Viewing[]
+  notifications     Notification[]
+  auditLogs         AuditLog[]
+  recentlyViewed    RecentlyViewed[]
+  subscription      Subscription?
+
+  @@index([email])
+  @@index([role])
+}
+
+model OAuthAccount {
+  id             String       @id @default(cuid())
+  userId         String
+  provider       AuthProvider
+  providerUserId String
+  accessToken    String?
+  refreshToken   String?
+  expiresAt      DateTime?
+  createdAt      DateTime     @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  refreshToken String   @unique
+  userAgent    String?
+  ipAddress    String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([refreshToken])
+}
+
+// ─── Agency & Agent ───────────────────────────────────────────────────────────
+
+model Agency {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  logoUrl     String?
+  website     String?
+  email       String?
+  phone       String?
+  address     String?
+  country     String
+  city        String?
+  isVerified  Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  agents       Agent[]
+  listings     Listing[]
+  subscription Subscription?
+
+  @@index([country])
+  @@index([slug])
+}
+
+model Agent {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  agencyId    String?
+  licenseNo   String?
+  bio         String?
+  specialties String[]
+  languages   String[]
+  isVerified  Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agency   Agency?   @relation(fields: [agencyId], references: [id])
+  listings Listing[]
+  inquiries Inquiry[]
+  viewings  Viewing[]
+
+  @@index([agencyId])
+}
+
+model Owner {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  isPrivate Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listings Listing[]
+}
+
+// ─── Location ─────────────────────────────────────────────────────────────────
+
+model Location {
+  id           String   @id @default(cuid())
+  country      String
+  countryCode  String
+  region       String?
+  state        String?
+  city         String
+  neighborhood String?
+  postalCode   String?
+  address      String?
+  latitude     Float
+  longitude    Float
+  geohash      String?
+  timezone     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  listings Listing[]
+
+  @@index([countryCode])
+  @@index([city])
+  @@index([postalCode])
+  @@index([geohash])
+  @@index([latitude, longitude])
+}
+
+// ─── Property & Listing ───────────────────────────────────────────────────────
+
+model Listing {
+  id                String        @id @default(cuid())
+  externalId        String?
+  sourceConnector   String?
+  sourceUrl         String?
+  sourceLastSyncAt  DateTime?
+  confidenceScore   Float?        @default(1.0)
+
+  title             String
+  slug              String        @unique
+  description       String?
+  descriptionTranslations Json?
+
+  listingType       ListingType
+  propertyType      PropertyType
+  status            ListingStatus @default(DRAFT)
+
+  locationId        String
+  agentId           String?
+  agencyId          String?
+  ownerId           String?
+
+  // Pricing
+  price             Float
+  currency          String        @default("USD")
+  pricePerSqm       Float?
+  priceHistory      Json?
+  isNegotiable      Boolean       @default(false)
+  monthlyFee        Float?
+
+  // Property details
+  builtArea         Float?        // sqm
+  lotArea           Float?        // sqm
+  bedrooms          Int?
+  bathrooms         Float?
+  toilets           Int?
+  floors            Int?
+  floorNumber       Int?
+  parkingSpaces     Int?
+  yearBuilt         Int?
+  condition         String?
+
+  // Features / amenities (stored as flags for fast filtering)
+  isFurnished       Boolean?
+  hasPool           Boolean       @default(false)
+  hasGarden         Boolean       @default(false)
+  hasTerrace        Boolean       @default(false)
+  hasBalcony        Boolean       @default(false)
+  hasElevator       Boolean       @default(false)
+  hasParking        Boolean       @default(false)
+  hasAirConditioning Boolean      @default(false)
+  hasHeating        Boolean       @default(false)
+  isPetFriendly     Boolean?
+  isAccessible      Boolean?
+  energyRating      EnergyRating?
+  heatingType       String?
+  viewType          String?
+
+  // Additional amenities as array
+  amenities         String[]
+
+  // SEO
+  metaTitle         String?
+  metaDescription   String?
+
+  // Stats
+  viewCount         Int           @default(0)
+  favoriteCount     Int           @default(0)
+  inquiryCount      Int           @default(0)
+
+  isFeatured        Boolean       @default(false)
+  featuredUntil     DateTime?
+  publishedAt       DateTime?
+  expiresAt         DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  location    Location   @relation(fields: [locationId], references: [id])
+  agent       Agent?     @relation(fields: [agentId], references: [id])
+  agency      Agency?    @relation(fields: [agencyId], references: [id])
+  owner       Owner?     @relation(fields: [ownerId], references: [id])
+  media       ListingMedia[]
+  favorites   Favorite[]
+  inquiries   Inquiry[]
+  viewings    Viewing[]
+  recentlyViewed RecentlyViewed[]
+  priceHistoryRecords PriceHistory[]
+
+  @@index([listingType])
+  @@index([propertyType])
+  @@index([status])
+  @@index([locationId])
+  @@index([agentId])
+  @@index([agencyId])
+  @@index([price])
+  @@index([bedrooms])
+  @@index([isFeatured])
+  @@index([publishedAt])
+  @@index([sourceConnector])
+  @@index([externalId, sourceConnector])
+}
+
+model ListingMedia {
+  id         String    @id @default(cuid())
+  listingId  String
+  type       MediaType
+  url        String
+  thumbnailUrl String?
+  caption    String?
+  sortOrder  Int       @default(0)
+  isPrimary  Boolean   @default(false)
+  width      Int?
+  height     Int?
+  duration   Int?
+  createdAt  DateTime  @default(now())
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId])
+}
+
+model PriceHistory {
+  id        String   @id @default(cuid())
+  listingId String
+  price     Float
+  currency  String
+  changedAt DateTime @default(now())
+  note      String?
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId])
+}
+
+// ─── User Activity ────────────────────────────────────────────────────────────
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  listingId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId])
+  @@index([userId])
+}
+
+model SavedSearch {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  filters     Json
+  alertEnabled Boolean @default(true)
+  alertFrequency String @default("daily")
+  lastAlertAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([alertEnabled])
+}
+
+model RecentlyViewed {
+  id        String   @id @default(cuid())
+  userId    String
+  listingId String
+  viewedAt  DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId])
+  @@index([userId])
+}
+
+model Inquiry {
+  id        String     @id @default(cuid())
+  userId    String?
+  agentId   String?
+  listingId String
+  name      String
+  email     String
+  phone     String?
+  message   String
+  status    LeadStatus @default(NEW)
+  source    String?
+  notes     String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  user    User?    @relation(fields: [userId], references: [id])
+  agent   Agent?   @relation(fields: [agentId], references: [id])
+  listing Listing  @relation(fields: [listingId], references: [id])
+
+  @@index([listingId])
+  @@index([agentId])
+  @@index([userId])
+  @@index([status])
+}
+
+model Viewing {
+  id          String   @id @default(cuid())
+  userId      String
+  agentId     String?
+  listingId   String
+  scheduledAt DateTime
+  duration    Int      @default(60)
+  notes       String?
+  confirmed   Boolean  @default(false)
+  cancelled   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id])
+  agent   Agent?  @relation(fields: [agentId], references: [id])
+  listing Listing @relation(fields: [listingId], references: [id])
+
+  @@index([userId])
+  @@index([agentId])
+  @@index([listingId])
+  @@index([scheduledAt])
+}
+
+// ─── Ingestion ────────────────────────────────────────────────────────────────
+
+model SourceConnector {
+  id            String   @id @default(cuid())
+  name          String
+  country       String
+  countryCode   String
+  connectorType String
+  config        Json
+  isActive      Boolean  @default(true)
+  cronSchedule  String?
+  lastRunAt     DateTime?
+  lastRunStatus String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  importJobs ImportJob[]
+
+  @@index([countryCode])
+  @@index([isActive])
+}
+
+model ImportJob {
+  id              String          @id @default(cuid())
+  connectorId     String
+  status          ImportJobStatus @default(PENDING)
+  totalRecords    Int?
+  processedRecords Int?
+  newListings     Int?
+  updatedListings Int?
+  failedRecords   Int?
+  errorLog        Json?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime        @default(now())
+
+  connector SourceConnector @relation(fields: [connectorId], references: [id])
+
+  @@index([connectorId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ─── Subscriptions & Payments ─────────────────────────────────────────────────
+
+model Subscription {
+  id               String             @id @default(cuid())
+  userId           String?            @unique
+  agencyId         String?            @unique
+  plan             SubscriptionPlan   @default(FREE)
+  status           SubscriptionStatus @default(ACTIVE)
+  stripeCustomerId String?
+  stripeSubId      String?
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd  Boolean          @default(false)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  user   User?   @relation(fields: [userId], references: [id])
+  agency Agency? @relation(fields: [agencyId], references: [id])
+
+  @@index([stripeCustomerId])
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  data      Json?
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+// ─── Audit Log ────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  entityType String
+  entityId   String?
+  oldValue   Json?
+  newValue   Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}

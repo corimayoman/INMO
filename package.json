@@ -1,0 +1,22 @@
+{
+  "name": "worldpropertyfinder",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"pnpm --filter api start:dev\" \"pnpm --filter web dev\"",
+    "build": "pnpm --filter api build && pnpm --filter web build",
+    "prisma:migrate": "pnpm --filter api prisma migrate dev",
+    "prisma:generate": "pnpm --filter api prisma generate",
+    "prisma:seed": "pnpm --filter api prisma:seed",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.3.3"
+  }
+}
