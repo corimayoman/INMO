@@ -6,9 +6,10 @@
     "build": "nest build",
     "start": "node dist/main",
     "start:dev": "nest start --watch",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:generate": "prisma generate",
-    "prisma:seed": "ts-node prisma/seed.ts"
+    "prisma": "prisma",
+    "prisma:migrate": "prisma migrate dev --schema=../../prisma/schema.prisma",
+    "prisma:generate": "prisma generate --schema=../../prisma/schema.prisma",
+    "prisma:seed": "ts-node ../../prisma/seed.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.0",
