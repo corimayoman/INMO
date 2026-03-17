@@ -43,7 +43,7 @@ export function PropertyCard({ listing, compact = false }: PropertyCardProps) {
   };
 
   return (
-    <Link href={`/property/${listing.slug}`} className="property-card group block">
+    <Link href={`/property?slug=${listing.slug}`} className="property-card group block">
       {/* Image */}
       <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
         {primaryImage ? (

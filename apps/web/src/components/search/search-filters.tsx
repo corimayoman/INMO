@@ -24,10 +24,14 @@ function FilterSection({ title, children, defaultOpen = true }: { title: string;
 export function SearchFilters() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [localFilters, setLocalFilters] = useState(Object.fromEntries(searchParams.entries()));
+  const [localFilters, setLocalFilters] = useState<Record<string, string>>(Object.fromEntries(searchParams.entries()));
 
   const set = (key: string, value: any) => setLocalFilters((prev) => ({ ...prev, [key]: value }));
-  const toggle = (key: string) => setLocalFilters((prev) => ({ ...prev, [key]: prev[key] === 'true' ? undefined : 'true' }));
+  const toggle = (key: string) => setLocalFilters((prev) => {
+    const next = { ...prev };
+    if (next[key] === 'true') { delete next[key]; } else { next[key] = 'true'; }
+    return next;
+  });
 
   const applyFilters = () => {
     const clean = Object.fromEntries(Object.entries(localFilters).filter(([, v]) => v !== undefined && v !== ''));

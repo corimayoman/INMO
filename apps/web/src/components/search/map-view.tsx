@@ -33,7 +33,9 @@ export function MapView({ listings, onBoundsChange }: MapViewProps) {
     if (onBoundsChange) {
       map.current.on('moveend', () => {
         const bounds = map.current!.getBounds();
-        onBoundsChange([bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]);
+        if (bounds) {
+          onBoundsChange([bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]);
+        }
       });
     }
 
@@ -91,7 +93,7 @@ export function MapView({ listings, onBoundsChange }: MapViewProps) {
             <div className="min-w-0">
               <div className="font-bold text-brand-700">{formatPrice(selectedListing.price, selectedListing.currency)}</div>
               <div className="text-sm text-gray-700 truncate">{selectedListing.title}</div>
-              <a href={`/property/${selectedListing.slug}`} className="text-xs text-brand-600 hover:underline mt-1 block">View details →</a>
+              <a href={`/property?slug=${selectedListing.slug}`} className="text-xs text-brand-600 hover:underline mt-1 block">View details →</a>
             </div>
           </div>
         </div>

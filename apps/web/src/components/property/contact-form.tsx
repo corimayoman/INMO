@@ -22,6 +22,7 @@ export function ContactForm({ listing }: ContactFormProps) {
       name: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '',
       email: user?.email || '',
       phone: '',
+      scheduledAt: '',
       message: `Hi, I'm interested in this property. Could you please provide more information?`,
     },
   });
